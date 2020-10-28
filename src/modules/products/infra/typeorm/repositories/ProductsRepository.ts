@@ -33,16 +33,28 @@ class ProductsRepository implements IProductsRepository {
   }
 
   public async findByName(name: string): Promise<Product | undefined> {
-    const findProduct = await this.ormRepository.findOne(name);
+    const findProduct = await this.ormRepository.findOne({
+      where: {
+        name,
+      },
+    });
 
     return findProduct;
   }
 
   public async findAllById(products: IFindProducts[]): Promise<Product[]> {
-    const findProducts: Product[] = [];
-    products.forEach(async product => {
-      const prod = await this.ormRepository.findOne(product.id);
-      if (prod) findProducts.push(prod);
+    // const findProducts: Product[] = [];
+    // products.forEach(async product => {
+    //   const prod = await this.ormRepository.findOne(product.id);
+    //   if (prod) findProducts.push(prod);
+    // });
+
+    const productIds = products.map(product => product.id);
+
+    const findProducts = await this.ormRepository.find({
+      where: {
+        id: In(productIds),
+      },
     });
 
     return findProducts;
@@ -50,15 +62,13 @@ class ProductsRepository implements IProductsRepository {
 
   public async updateQuantity(
     products: IUpdateProductsQuantityDTO[],
-  ): Promise<Product[]> {
-    const updatedProducts: Product[] = [];
-    products.forEach(async product => {
-      const { id, quantity } = product;
-      const updatedProduct = await this.ormRepository.update(id, { quantity });
-      if (updatedProduct) updatedProducts.push(updatedProduct as Product);
+  ): Promise<any> {
+    const productsUpdated = products.map(async product => {
+      return this.ormRepository.update(product.id, {
+        quantity: product.quantity,
+      });
     });
-
-    return updatedProducts;
+    return productsUpdated;
   }
 }
 
